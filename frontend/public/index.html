@@ -69,6 +69,20 @@
       margin-bottom: 10px;
     }
 
+    #timer {
+      text-align: right;
+      font-weight: bold;
+      color: #e74c3c;
+    }
+
+    .loading {
+      text-align: center;
+    }
+
+    .loading img {
+      width: 50px;
+    }
+
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
@@ -86,6 +100,7 @@
 
   <div class="container hidden" id="quizScreen">
     <h2>Quiz</h2>
+    <p id="timer">Time Left: 03:00</p>
     <div id="questionContainer" class="question-block"></div>
     <button id="nextBtn" onclick="nextQuestion()">Next</button>
   </div>
@@ -95,6 +110,13 @@
     <p id="resultMessage"></p>
   </div>
 
+  <div class="container hidden" id="loadingScreen">
+    <div class="loading">
+      <img src="https://i.gifer.com/ZZ5H.gif" alt="Loading..." />
+      <p>Loading quiz...</p>
+    </div>
+  </div>
+
   <script>
     let studentName = '';
     let studentUSN = '';
@@ -102,6 +124,8 @@
     let questions = [];
     let answers = {};
     let currentQuestionIndex = 0;
+    let timerInterval;
+    let timeLeft = 180; // 3 minutes
 
     function startQuiz() {
       studentName = document.getElementById("studentName").value.trim();
@@ -109,48 +133,56 @@
 
       if (!studentName || !studentUSN) return alert("Please enter name and USN.");
 
+      document.getElementById("startScreen").classList.add("hidden");
+      document.getElementById("loadingScreen").classList.remove("hidden");
+
       fetch(`http://localhost:5000/api/quiz/random?usn=${studentUSN}`)
         .then(res => res.json())
         .then(data => {
+          document.getElementById("loadingScreen").classList.add("hidden");
           if (data.error) {
             alert(data.error);
+            document.getElementById("startScreen").classList.remove("hidden");
           } else {
             questions = data;
             currentQuestionIndex = 0;
             renderQuestion();
-            document.getElementById("startScreen").classList.add("hidden");
+            startTimer();
             document.getElementById("quizScreen").classList.remove("hidden");
           }
+        })
+        .catch(() => {
+          alert("Failed to load quiz.");
+          document.getElementById("startScreen").classList.remove("hidden");
+          document.getElementById("loadingScreen").classList.add("hidden");
         });
     }
-function escapeHTML(str) {
-  const div = document.createElement('div');
-  div.innerText = str;
-  return div.innerHTML;
-}
 
     function renderQuestion() {
-      const container = document.getElementById("questionContainer");
-      const question = questions[currentQuestionIndex];
-      console.log(question,questions)
+      const questionObj = questions[currentQuestionIndex];
+      const questionContainer = document.getElementById('questionContainer');
+      questionContainer.innerHTML = '';
 
-      container.innerHTML = `
-  <label>${currentQuestionIndex + 1}. ${escapeHTML(question.question)}</label>
-  ${question.options.map(opt => `
-    <div>
-      <input type="radio" name="answer" value="${escapeHTML(opt)}" ${answers[question._id] === opt ? 'checked' : ''} />
-      ${escapeHTML(opt)}
-    </div>
-  `).join('')}
-`;
+      const questionText = document.createElement('h3');
+      questionText.textContent = questionObj.question;
+      questionContainer.appendChild(questionText);
 
-
-      document.getElementById("nextBtn").innerText = currentQuestionIndex === questions.length - 1 ? "Submit Quiz" : "Next";
+      questionObj.options.forEach((option, index) => {
+        const label = document.createElement('label');
+        const input = document.createElement('input');
+        input.type = 'radio';
+        input.name = 'answer';
+        input.value = option;
+        input.id = `option${index}`;
+        label.appendChild(input);
+        label.appendChild(document.createTextNode(` ${option}`));
+        questionContainer.appendChild(label);
+      });
     }
 
     function nextQuestion() {
       const selected = document.querySelector('input[name="answer"]:checked');
-      if (!selected) return alert("Please select an answer");
+      if (!selected) return alert("Please select an option.");
 
       const qid = questions[currentQuestionIndex]._id;
       answers[qid] = selected.value;
@@ -166,6 +198,10 @@ function escapeHTML(str) {
     function submitQuiz() {
       if (quizSubmitted) return;
       quizSubmitted = true;
+      clearInterval(timerInterval);
+
+      document.getElementById("quizScreen").classList.add("hidden");
+      document.getElementById("loadingScreen").classList.remove("hidden");
 
       fetch("http://localhost:5000/api/quiz", {
         method: "POST",
@@ -178,14 +214,31 @@ function escapeHTML(str) {
       })
         .then(res => res.json())
         .then(data => {
-          document.getElementById("quizScreen").classList.add("hidden");
+          document.getElementById("loadingScreen").classList.add("hidden");
           document.getElementById("resultScreen").classList.remove("hidden");
           document.getElementById("resultMessage").textContent = `Your score is ${data.score}`;
         })
         .catch(err => {
           console.error("Error:", err);
           alert("Something went wrong.");
+          location.reload();
         });
+    }
+
+    function startTimer() {
+      const timerDisplay = document.getElementById("timer");
+      timerInterval = setInterval(() => {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerDisplay.textContent = `Time Left: ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        timeLeft--;
+
+        if (timeLeft < 0) {
+          clearInterval(timerInterval);
+          alert("Time's up! Submitting quiz...");
+          submitQuiz();
+        }
+      }, 1000);
     }
 
     // Anti-cheating: tab switch or blur
