@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Add Quiz Question</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+    input, button {
+      margin: 5px 0;
+      padding: 8px;
+      width: 100%;
+    }
+    label {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Add a Quiz Question</h2>
+
+  <form id="questionForm">
+    <label>Question:</label>
+    <input type="text" id="questionText" required />
+
+    <label>Option 1:</label>
+    <input type="text" id="opt1" required />
+
+    <label>Option 2:</label>
+    <input type="text" id="opt2" required />
+
+    <label>Option 3:</label>
+    <input type="text" id="opt3" required />
+
+    <label>Option 4:</label>
+    <input type="text" id="opt4" required />
+
+    <label>Correct Answer:</label>
+    <input type="text" id="correctAnswer" required placeholder="Must match one of the options" />
+
+    <button type="submit">Add Question</button>
+  </form>
+
+  <p id="message"></p>
+
+  <script>
+    document.getElementById("questionForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+
+      const questionText = document.getElementById("questionText").value;
+      const options = [
+        document.getElementById("opt1").value,
+        document.getElementById("opt2").value,
+        document.getElementById("opt3").value,
+        document.getElementById("opt4").value
+      ];
+      const correctAnswer = document.getElementById("correctAnswer").value;
+
+      fetch("http://localhost:5000/api/quiz/question", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ questionText, options, correctAnswer })
+      })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("message").textContent = data.message || "Question added!";
+        document.getElementById("questionForm").reset();
+      })
+      .catch(err => {
+        console.error(err);
+        document.getElementById("message").textContent = "Error adding question.";
+      });
+    });
+  </script>
+
+</body>
+</html>

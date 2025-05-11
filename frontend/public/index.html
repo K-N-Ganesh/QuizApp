@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Quiz App</title>
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: #ecf0f3;
+      height: 100vh;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .container {
+      background: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 500px;
+      animation: fadeIn 0.5s ease;
+    }
+
+    h2 {
+      text-align: center;
+      color: #2c3e50;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background-color: #2980b9;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .question-block {
+      margin-top: 20px;
+    }
+
+    label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 10px;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container" id="startScreen">
+    <h2>Login to Start Quiz</h2>
+    <input type="text" id="studentName" placeholder="Your Name" />
+    <input type="text" id="studentusn" placeholder="Your USN" />
+    <button onclick="startQuiz()">Start Quiz</button>
+  </div>
+
+  <div class="container hidden" id="quizScreen">
+    <h2>Quiz</h2>
+    <div id="questionContainer" class="question-block"></div>
+    <button id="nextBtn" onclick="nextQuestion()">Next</button>
+  </div>
+
+  <div class="container hidden" id="resultScreen">
+    <h2>Result</h2>
+    <p id="resultMessage"></p>
+  </div>
+
+  <script>
+    let studentName = '';
+    let studentUSN = '';
+    let quizSubmitted = false;
+    let questions = [];
+    let answers = {};
+    let currentQuestionIndex = 0;
+
+    function startQuiz() {
+      studentName = document.getElementById("studentName").value.trim();
+      studentUSN = document.getElementById("studentusn").value.trim();
+
+      if (!studentName || !studentUSN) return alert("Please enter name and USN.");
+
+      fetch(`http://localhost:5000/api/quiz/random?usn=${studentUSN}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.error) {
+            alert(data.error);
+          } else {
+            questions = data;
+            currentQuestionIndex = 0;
+            renderQuestion();
+            document.getElementById("startScreen").classList.add("hidden");
+            document.getElementById("quizScreen").classList.remove("hidden");
+          }
+        });
+    }
+function escapeHTML(str) {
+  const div = document.createElement('div');
+  div.innerText = str;
+  return div.innerHTML;
+}
+
+    function renderQuestion() {
+      const container = document.getElementById("questionContainer");
+      const question = questions[currentQuestionIndex];
+      console.log(question,questions)
+
+      container.innerHTML = `
+  <label>${currentQuestionIndex + 1}. ${escapeHTML(question.question)}</label>
+  ${question.options.map(opt => `
+    <div>
+      <input type="radio" name="answer" value="${escapeHTML(opt)}" ${answers[question._id] === opt ? 'checked' : ''} />
+      ${escapeHTML(opt)}
+    </div>
+  `).join('')}
+`;
+
+
+      document.getElementById("nextBtn").innerText = currentQuestionIndex === questions.length - 1 ? "Submit Quiz" : "Next";
+    }
+
+    function nextQuestion() {
+      const selected = document.querySelector('input[name="answer"]:checked');
+      if (!selected) return alert("Please select an answer");
+
+      const qid = questions[currentQuestionIndex]._id;
+      answers[qid] = selected.value;
+
+      if (currentQuestionIndex === questions.length - 1) {
+        submitQuiz();
+      } else {
+        currentQuestionIndex++;
+        renderQuestion();
+      }
+    }
+
+    function submitQuiz() {
+      if (quizSubmitted) return;
+      quizSubmitted = true;
+
+      fetch("http://localhost:5000/api/quiz", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: studentName,
+          usn: studentUSN,
+          responses: answers
+        })
+      })
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById("quizScreen").classList.add("hidden");
+          document.getElementById("resultScreen").classList.remove("hidden");
+          document.getElementById("resultMessage").textContent = `Your score is ${data.score}`;
+        })
+        .catch(err => {
+          console.error("Error:", err);
+          alert("Something went wrong.");
+        });
+    }
+
+    // Anti-cheating: tab switch or blur
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden && !quizSubmitted && !document.getElementById("quizScreen").classList.contains("hidden")) {
+        alert("Tab switch detected. Submitting quiz...");
+        submitQuiz();
+      }
+    });
+
+    window.addEventListener("blur", () => {
+      if (!quizSubmitted && !document.getElementById("quizScreen").classList.contains("hidden")) {
+        alert("Browser lost focus. Submitting quiz...");
+        submitQuiz();
+      }
+    });
+  </script>
+
+</body>
+</html>

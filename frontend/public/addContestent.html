@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Add Contestant</title>
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: #f0f4f8;
+      padding: 40px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background: white;
+      padding: 30px 40px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 400px;
+      animation: fadeInUp 0.6s ease;
+    }
+
+    h2 {
+      text-align: center;
+      color: #2c3e50;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0 20px;
+      box-sizing: border-box;
+      border: 2px solid #ccc;
+      border-radius: 6px;
+      transition: border-color 0.3s ease-in-out;
+    }
+
+    input[type="text"]:focus {
+      border-color: #3498db;
+      outline: none;
+    }
+
+    button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 12px;
+      width: 100%;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #2980b9;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>Add Contestant</h2>
+    <form id="contestantForm">
+      <input type="text" id="usn" placeholder="Enter USN" required />
+      <input type="text" id="name" placeholder="Enter Name" required />
+      <button type="submit">Submit</button>
+    </form>
+  </div>
+
+  <script>
+    document.getElementById("contestantForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const usn = document.getElementById("usn").value.trim();
+      const name = document.getElementById("name").value.trim();
+
+      if (!usn || !name) {
+        return alert("Please fill in both USN and name.");
+      }
+
+      fetch("http://localhost:5000/api/quiz/contestant", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ usn, name })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === "success") {
+            alert("Contestant added successfully!");
+            document.getElementById("contestantForm").reset();
+          } else {
+            alert("Failed to add contestant.");
+          }
+        })
+        .catch(err => {
+          console.error("Error:", err);
+          alert("Something went wrong.");
+        });
+    });
+  </script>
+
+</body>
+</html>
