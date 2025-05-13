@@ -92,14 +92,29 @@
 <body>
 
   <div class="container" id="startScreen">
-    <h2>Login to Start Quiz</h2>
-    <input type="text" id="studentName" placeholder="Your Name" />
-    <input type="text" id="studentusn" placeholder="Your USN" />
-    <button onclick="startQuiz()">Start Quiz</button>
+  <h2>Login to Start Quiz</h2>
+
+  <div id="rulesBox" style="text-align: left; font-size: 14px; margin-bottom: 20px;">
+    <h4>Rules and Regulations:</h4>
+    <ul>
+     <li>Each student can attempt the quiz only once.</li>
+    <li>Total time for the quiz is 3 minutes.</li>
+    <li>Do not switch tabs or minimize the window—doing so will auto-submit the quiz.</li>
+    <li>Select the best answer for each question before clicking "Next".</li>
+    <li>Quiz will auto-submit once the timer ends.</li>
+    <li><strong>Use only mouse</strong> (keyboard use is not allowed).</li>
+   </ul>
+    <label><input type="checkbox" id="agreeRules" /> I have read and agree to the rules</label>
   </div>
+
+  <input type="text" id="studentusn" placeholder="Your USN" />
+  <button onclick="startQuiz()">Start Quiz</button>
+</div>
+
 
   <div class="container hidden" id="quizScreen">
     <h2>Quiz</h2>
+    <p id="name"></p>
     <p id="timer">Time Left: 03:00</p>
     <div id="questionContainer" class="question-block"></div>
     <button id="nextBtn" onclick="nextQuestion()">Next</button>
@@ -128,15 +143,18 @@
     let timeLeft = 180; // 3 minutes
 
     function startQuiz() {
-      studentName = document.getElementById("studentName").value.trim();
+      // studentName = document.getElementById("studentName").value.trim();
       studentUSN = document.getElementById("studentusn").value.trim();
+      const agreed = document.getElementById("agreeRules").checked;
 
-      if (!studentName || !studentUSN) return alert("Please enter name and USN.");
+      if (!studentUSN || !agreed) {
+        return alert("Please enter your USN and agree to the rules before starting the quiz.");
+      }
 
       document.getElementById("startScreen").classList.add("hidden");
       document.getElementById("loadingScreen").classList.remove("hidden");
 
-      fetch(`http://localhost:5000/api/quiz/random?usn=${studentUSN}`)
+      fetch(`http://127.0.0.1:5000/api/quiz/random?usn=${studentUSN}`)
         .then(res => res.json())
         .then(data => {
           document.getElementById("loadingScreen").classList.add("hidden");
@@ -144,15 +162,18 @@
             alert(data.error);
             document.getElementById("startScreen").classList.remove("hidden");
           } else {
-            questions = data;
+            console.log(data)
+            questions = data.questions;
+           document.getElementById("name").textContent = data.name;
             currentQuestionIndex = 0;
             renderQuestion();
             startTimer();
             document.getElementById("quizScreen").classList.remove("hidden");
           }
         })
-        .catch(() => {
+        .catch((err) => {
           alert("Failed to load quiz.");
+          console.log(err)
           document.getElementById("startScreen").classList.remove("hidden");
           document.getElementById("loadingScreen").classList.add("hidden");
         });
@@ -164,7 +185,7 @@
       questionContainer.innerHTML = '';
 
       const questionText = document.createElement('h3');
-      questionText.textContent = questionObj.question;
+      questionText.textContent = (currentQuestionIndex+1+".")+questionObj.question;
       questionContainer.appendChild(questionText);
 
       questionObj.options.forEach((option, index) => {
@@ -181,19 +202,19 @@
     }
 
     function nextQuestion() {
-      const selected = document.querySelector('input[name="answer"]:checked');
-      if (!selected) return alert("Please select an option.");
+  const selected = document.querySelector('input[name="answer"]:checked');
 
-      const qid = questions[currentQuestionIndex]._id;
-      answers[qid] = selected.value;
+  const qid = questions[currentQuestionIndex]._id;
+  answers[qid] = selected ? selected.value : ""; // Store empty string if not answered
 
-      if (currentQuestionIndex === questions.length - 1) {
-        submitQuiz();
-      } else {
-        currentQuestionIndex++;
-        renderQuestion();
-      }
-    }
+  if (currentQuestionIndex === questions.length - 1) {
+    submitQuiz();
+  } else {
+    currentQuestionIndex++;
+    renderQuestion();
+  }
+}
+
 
     function submitQuiz() {
       if (quizSubmitted) return;
@@ -203,7 +224,7 @@
       document.getElementById("quizScreen").classList.add("hidden");
       document.getElementById("loadingScreen").classList.remove("hidden");
 
-      fetch("http://localhost:5000/api/quiz", {
+      fetch("https://quizapp-amw6.onrender.com/api/quiz", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -255,6 +276,14 @@
         submitQuiz();
       }
     });
+    document.addEventListener('keydown', function (e) {
+  if (!quizSubmitted && !document.getElementById("quizScreen").classList.contains("hidden")) {
+    e.preventDefault();
+    alert("Keyboard use is not allowed during the quiz. Submitting your quiz now.");
+    submitQuiz();
+  }
+});
+
   </script>
 
 </body>

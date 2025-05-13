@@ -103,7 +103,11 @@ import Contestant from "../models/Contestant.js";
 
     // Send random questions
     const questions = await Question.aggregate([{ $sample: { size: 5 } }]);
-    res.json(questions);
+    const response ={
+      name:contestant.name,
+      questions:questions
+    }
+    res.json(response);
 
   } catch (err) {
     console.error("Error fetching quiz questions:", err);
