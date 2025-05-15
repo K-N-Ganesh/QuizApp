@@ -85,7 +85,7 @@ import Contestant from "../models/Contestant.js";
   router.get("/random", async (req, res) => {
   try {
     const { usn } = req.query;
-
+console.log("whdwe",usn)
     if (!usn) {
       return res.status(400).json({ error: "USN is required" });
     }
@@ -102,11 +102,28 @@ import Contestant from "../models/Contestant.js";
     }
 
     // Send random questions
-    const questions = await Question.aggregate([{ $sample: { size: 5 } }]);
-    const response ={
-      name:contestant.name,
-      questions:questions
-    }
+    let skip = 0;
+let limit = 5;
+
+if (usn >= "01" && usn <= "30") {
+  skip = 0; // First 15 questions
+} else if (usn >= "31" && usn <= "58") {
+  skip = 15; // Next 15 questions
+} else {
+  return res.status(400).json({ error: 'Invalid USN range' });
+}
+const questions = await Question.aggregate([
+  { $sort: { _id: 1 } },        // sort in consistent order
+  { $skip: skip },        // skip based on USN
+  { $limit: 15 },              // take 15 questions
+  { $sample: { size: 5 } }     // randomly pick 5 from those
+]);
+const response = {
+  name: contestant.name,
+  questions: questions
+};
+console.log(skip,questions);
+
     res.json(response);
 
   } catch (err) {

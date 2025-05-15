@@ -103,6 +103,7 @@
     <li>Select the best answer for each question before clicking "Next".</li>
     <li>Quiz will auto-submit once the timer ends.</li>
     <li><strong>Use only mouse</strong> (keyboard use is not allowed).</li>
+    <li><strong>You cannot go back to the previous question once you click Next.</strong></li>
    </ul>
     <label><input type="checkbox" id="agreeRules" /> I have read and agree to the rules</label>
   </div>
@@ -154,7 +155,7 @@
       document.getElementById("startScreen").classList.add("hidden");
       document.getElementById("loadingScreen").classList.remove("hidden");
 
-      fetch(`http://127.0.0.1:5000/api/quiz/random?usn=${studentUSN}`)
+      fetch(`https://quizapp-amw6.onrender.com/api/quiz/random?usn=${studentUSN}`)
         .then(res => res.json())
         .then(data => {
           document.getElementById("loadingScreen").classList.add("hidden");
