@@ -107,7 +107,7 @@ let limit = 5;
 
 if (usn >= "01" && usn <= "30") {
   skip = 0; // First 15 questions
-} else if (usn >= "31" && usn <= "58") {
+} else if (usn >= "31" && usn <= "64") {
   skip = 15; // Next 15 questions
 } else {
   return res.status(400).json({ error: 'Invalid USN range' });
