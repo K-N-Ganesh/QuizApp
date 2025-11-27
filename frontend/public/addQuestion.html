@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Add Quiz Question</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
+      padding: 20px;
+      max-width: 450px;
+      margin: auto;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    label {
+      font-weight: bold;
+      margin-top: 12px;
+      display: block;
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      box-sizing: border-box;
+      font-size: 14px;
+    }
+
+    button {
+      background: #3498db;
+      border: none;
+      color: white;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    button:hover {
+      background: #2980b9;
+    }
+
+    #message {
+      margin-top: 15px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Add Quiz Question</h2>
+
+  <form id="questionForm">
+
+    <!-- CLASS FIELD -->
+    <label>Class</label>
+    <select id="className" required>
+      <option value="" disabled selected>Select Class</option>
+      <option value="BCA-II">BCA-II</option>
+      <option value="BCA-III">BCA-III</option>
+    </select>
+
+    <!-- QUESTION -->
+    <label>Question</label>
+    <input type="text" id="questionText" required />
+
+    <!-- OPTIONS -->
+    <label>Option 1</label>
+    <input type="text" id="opt1" required />
+
+    <label>Option 2</label>
+    <input type="text" id="opt2" required />
+
+    <label>Option 3</label>
+    <input type="text" id="opt3" required />
+
+    <label>Option 4</label>
+    <input type="text" id="opt4" required />
+
+    <!-- CORRECT ANSWER -->
+    <label>Correct Answer</label>
+    <select id="correctAnswer" required>
+      <option value="" disabled selected>Select Correct Answer</option>
+      <option value="1">Option 1</option>
+      <option value="2">Option 2</option>
+      <option value="3">Option 3</option>
+      <option value="4">Option 4</option>
+    </select>
+
+    <button type="submit">Add Question</button>
+
+  </form>
+
+  <p id="message"></p>
+
+  <script>
+    document.getElementById("questionForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const className = document.getElementById("className").value;
+      const questionText = document.getElementById("questionText").value;
+
+      const options = [
+        document.getElementById("opt1").value,
+        document.getElementById("opt2").value,
+        document.getElementById("opt3").value,
+        document.getElementById("opt4").value,
+      ];
+
+      const correctIndex = document.getElementById("correctAnswer").value;
+      const correctAnswer = options[correctIndex - 1]; // convert to text
+
+      fetch("http://localhost:5000/api/quiz/question", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ className, questionText, options, correctAnswer })
+      })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("message").textContent = data.message || "Question added!";
+        document.getElementById("questionForm").reset();
+      })
+      .catch(err => {
+        console.error(err);
+        document.getElementById("message").textContent = "Error adding question.";
+      });
+
+    });
+  </script>
+
+</body>
+</html>

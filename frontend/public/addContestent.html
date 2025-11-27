@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Add Multiple Contestants</title>
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: linear-gradient(135deg, #74b9ff, #a29bfe);
+      padding: 40px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      height: 100vh;
+    }
+
+    .container {
+      background: #fff;
+      padding: 30px 40px;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+      width: 100%;
+      max-width: 600px;
+      animation: fadeInUp 0.6s ease;
+    }
+
+    h2 {
+      text-align: center;
+      color: #2d3436;
+      margin-bottom: 25px;
+    }
+
+    select, input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0;
+      border: 2px solid #ccc;
+      border-radius: 6px;
+      font-size: 15px;
+      transition: border-color 0.3s;
+    }
+
+    select:focus, input:focus {
+      border-color: #0984e3;
+      outline: none;
+    }
+
+    .student-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .student-row input {
+      flex: 1;
+    }
+
+    .student-row button {
+      background-color: #d63031;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+
+    .student-row button:hover {
+      background-color: #b71c1c;
+    }
+
+    #addRow {
+      background-color: #00b894;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 6px;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+
+    #addRow:hover {
+      background-color: #019875;
+    }
+
+    button[type="submit"] {
+      background-color: #0984e3;
+      color: white;
+      border: none;
+      padding: 12px;
+      width: 100%;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    button[type="submit"]:hover {
+      background-color: #74b9ff;
+      color: #2d3436;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>Add Multiple Contestants</h2>
+    <form id="multiForm">
+      <label for="className"><strong>Select Class:</strong></label>
+      <select id="className" required>
+        <option value="" disabled selected>Select Class</option>
+        <option value="BCA-II">BCA-II</option>
+        <option value="BCA-III">BCA-III</option>
+      </select>
+
+      <div id="studentsContainer">
+        <div class="student-row">
+          <input type="text" placeholder="Enter USN" class="usn" required>
+          <input type="text" placeholder="Enter Name" class="name" required>
+          <button type="button" class="removeBtn" onclick="removeRow(this)">×</button>
+        </div>
+      </div>
+
+      <button type="button" id="addRow">+ Add Another Student</button>
+      <button type="submit">Submit All</button>
+    </form>
+  </div>
+
+  <script>
+    const container = document.getElementById("studentsContainer");
+    const addRowBtn = document.getElementById("addRow");
+
+    addRowBtn.addEventListener("click", () => {
+      const row = document.createElement("div");
+      row.className = "student-row";
+      row.innerHTML = `
+        <input type="text" placeholder="Enter USN" class="usn" required>
+        <input type="text" placeholder="Enter Name" class="name" required>
+        <button type="button" class="removeBtn" onclick="removeRow(this)">×</button>
+      `;
+      container.appendChild(row);
+    });
+
+    function removeRow(btn) {
+      btn.parentElement.remove();
+    }
+
+    document.getElementById("multiForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const className = document.getElementById("className").value;
+      if (!className) return alert("Please select a class.");
+
+      const rows = document.querySelectorAll(".student-row");
+      const students = [];
+
+      rows.forEach(row => {
+        const usn = row.querySelector(".usn").value.trim();
+        const name = row.querySelector(".name").value.trim();
+        if (usn && name) students.push({ usn, name, className });
+      });
+
+      if (students.length === 0) return alert("Please enter at least one student.");
+
+      try {
+        const res = await fetch("https://quizapp-amw6.onrender.com/api/quiz/contestant", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ students })
+        });
+
+        const data = await res.json();
+        if (data.status === "success") {
+          alert("All contestants added successfully!");
+          document.getElementById("multiForm").reset();
+          container.innerHTML = `
+            <div class="student-row">
+              <input type="text" placeholder="Enter USN" class="usn" required>
+              <input type="text" placeholder="Enter Name" class="name" required>
+              <button type="button" class="removeBtn" onclick="removeRow(this)">×</button>
+            </div>`;
+        } else {
+          alert("Failed to add contestants.");
+        }
+      } catch (err) {
+        console.error("Error:", err);
+        alert("Something went wrong.");
+      }
+    });
+  </script>
+
+</body>
+</html>
