@@ -17,7 +17,6 @@ const resultSchema = new mongoose.Schema({
   }
 });
 
-
 const contestantSchema = new mongoose.Schema(
   {
     usn: {
@@ -41,13 +40,13 @@ const contestantSchema = new mongoose.Schema(
     createdAt: {
       type: Date,
       default: Date.now
-    }
+    },
+    results: [resultSchema]
   },
   {
     collection: "contestants"
   }
 );
-
 
 
 module.exports = mongoose.model("Contestant", contestantSchema);

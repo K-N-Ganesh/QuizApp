@@ -111,7 +111,12 @@ router.post("/", async (req, res) => {
 import Question from "../models/Question.js";
 import Contestant from "../models/Contestant.js";
 
-
+function getClassFromUSN(usn) {
+  if (usn.includes("TY23")) return "BCA-III";
+  if (usn.includes("TY24")) return "BCA-II";
+  if (usn.includes("TY25")) return "BCA-I";
+  return null; // unknown
+}
   router.get("/random", async (req, res) => {
   try {
     const { usn } = req.query;
@@ -120,7 +125,7 @@ console.log("whdwe",usn)
       return res.status(400).json({ error: "USN is required" });
     }
 
-    const contestant = await Contestant.findOne({ usn: Number(usn.trim()) });
+    const contestant = await Contestant.findOne({ usn: usn.trim() });
 
     if (!contestant) {
       return res.status(404).json({ error: "Contestant not found" });
@@ -135,17 +140,22 @@ console.log("whdwe",usn)
     let skip = 0;
 let limit = 5;
 
-if (usn >= "01" && usn <= "30") {
-  skip = 0; // First 15 questions
-} else if (usn >= "31" && usn <= "64") {
-  skip = 15; // Next 15 questions
-} else {
-  return res.status(400).json({ error: 'Invalid USN range' });
-}
+// if (usn >= "01" && usn <= "30") {
+//   skip = 0; // First 15 questions
+// } else if (usn >= "31" && usn <= "64") {
+//   skip = 15; // Next 15 questions
+// } else {
+//   return res.status(400).json({ error: 'Invalid USN range' });
+// }
+
+const className = getClassFromUSN(usn);
+if (!className) {
+      return res.status(400).json({ status: "error", message: "Invalid USN format." });
+    }
 const questions = await Question.aggregate([
+  { $match: { className } },
   { $sort: { _id: 1 } },        // sort in consistent order
-  { $skip: skip },        // skip based on USN
-  { $limit: 15 },              // take 15 questions
+              // take 15 questions
   { $sample: { size: 5 } }     // randomly pick 5 from those
 ]);
 const response = {
