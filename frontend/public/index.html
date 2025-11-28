@@ -155,7 +155,7 @@
       document.getElementById("startScreen").classList.add("hidden");
       document.getElementById("loadingScreen").classList.remove("hidden");
 
-      fetch(`http://localhost:5000/api/quiz/random?usn=${studentUSN}`)
+      fetch(`https://quizapp-amw6.onrender.com/api/quiz/random?usn=${studentUSN}`)
         .then(res => res.json())
         .then(data => {
           document.getElementById("loadingScreen").classList.add("hidden");
@@ -186,7 +186,8 @@
       questionContainer.innerHTML = '';
 
       const questionText = document.createElement('h3');
-      questionText.textContent = (currentQuestionIndex+1+".")+questionObj.question;
+      questionText.textContent = (currentQuestionIndex+1+".")+questionObj.
+questionText;
       questionContainer.appendChild(questionText);
 
       questionObj.options.forEach((option, index) => {
@@ -225,7 +226,7 @@
       document.getElementById("quizScreen").classList.add("hidden");
       document.getElementById("loadingScreen").classList.remove("hidden");
 
-      fetch("http://localhost:5000/api/quiz", {
+      fetch("https://quizapp-amw6.onrender.com/api/quiz", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
