@@ -141,7 +141,8 @@
     let answers = {};
     let currentQuestionIndex = 0;
     let timerInterval;
-    let timeLeft = 180; // 3 minutes
+    let timeLeft = 300; // 3 minutes
+let violationCount = 0;
 
     function startQuiz() {
       // studentName = document.getElementById("studentName").value.trim();
@@ -166,6 +167,7 @@
             console.log(data)
             questions = data.questions;
            document.getElementById("name").textContent = data.name;
+openFullscreen();
             currentQuestionIndex = 0;
             renderQuestion();
             startTimer();
@@ -179,7 +181,17 @@
           document.getElementById("loadingScreen").classList.add("hidden");
         });
     }
+function openFullscreen() {
+  let elem = document.documentElement; // whole page
 
+  if (elem.requestFullscreen) {
+    elem.requestFullscreen();
+  } else if (elem.webkitRequestFullscreen) { // Safari
+    elem.webkitRequestFullscreen();
+  } else if (elem.msRequestFullscreen) { // IE11
+    elem.msRequestFullscreen();
+  }
+}
     function renderQuestion() {
       const questionObj = questions[currentQuestionIndex];
       const questionContainer = document.getElementById('questionContainer');
@@ -263,28 +275,47 @@ questionText;
         }
       }, 1000);
     }
-
+    
     // Anti-cheating: tab switch or blur
     document.addEventListener("visibilitychange", () => {
-      if (document.hidden && !quizSubmitted && !document.getElementById("quizScreen").classList.contains("hidden")) {
-        alert("Tab switch detected. Submitting quiz...");
-        submitQuiz();
-      }
-    });
+  if (document.hidden &&
+      !quizSubmitted &&
+      !document.getElementById("quizScreen").classList.contains("hidden")) {
 
-    window.addEventListener("blur", () => {
-      if (!quizSubmitted && !document.getElementById("quizScreen").classList.contains("hidden")) {
-        alert("Browser lost focus. Submitting quiz...");
-        submitQuiz();
-      }
-    });
-    document.addEventListener('keydown', function (e) {
-  if (!quizSubmitted && !document.getElementById("quizScreen").classList.contains("hidden")) {
-    e.preventDefault();
-    alert("Keyboard use is not allowed during the quiz. Submitting your quiz now.");
-    submitQuiz();
+    handleViolation("Tab switch detected.");
   }
 });
+
+window.addEventListener("blur", () => {
+  if (!quizSubmitted &&
+      !document.getElementById("quizScreen").classList.contains("hidden")) {
+
+    handleViolation("Browser lost focus.");
+  }
+});
+
+document.addEventListener("keydown", (e) => {
+  if (!quizSubmitted &&
+      !document.getElementById("quizScreen").classList.contains("hidden")) {
+
+    e.preventDefault();
+    handleViolation("Keyboard use detected.");
+  }
+});
+function handleViolation(message) {
+  violationCount++;
+
+  if (violationCount === 1) {
+    alert(message + " This is your warning. Next violation will end the quiz.");
+    openFullscreen();
+    return;
+  }
+
+  if (violationCount > 2) {
+    alert(message + " Ending quiz...");
+    submitQuiz();
+  }
+}
 
   </script>
 

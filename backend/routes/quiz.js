@@ -154,10 +154,19 @@ if (!className) {
     }
 const questions = await Question.aggregate([
   { $match: { className } },
-  { $sort: { _id: 1 } },        // sort in consistent order
-              // take 15 questions
-  { $sample: { size: 5 } }     // randomly pick 5 from those
+  { $sort: { _id: 1 } },
+  { $sample: { size: 5 } },
+  {
+    $project: {
+      questionText: 1,
+      options: 1,
+      correctAnswer: 0,
+      className: 0,
+      __v: 0
+    }
+  }
 ]);
+
 const response = {
   name: contestant.name,
   questions: questions
